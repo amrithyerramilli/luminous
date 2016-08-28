@@ -1,12 +1,13 @@
 function ApiService($http, $q, $timeout) {
-    var API_URL = "http://192.168.0.147:8000/l/";
+    var API_URL = "http://192.168.0.147:8000/l";
     
     var URLs = {
         isMine : API_URL + "/isMine",
         markHomeT: API_URL + "/markHomeT",
-        takeSquare: API_URL + "/takeSquare"
+        takeSquare: API_URL + "/takeSquare",
+        getAllLoc: API_URL + "/getAllLoc",
     }
-    var mock = true;
+    var mock = false;
     var apiService = {};
 
     apiService.markHomeT = function (queryParams) {
@@ -23,6 +24,9 @@ function ApiService($http, $q, $timeout) {
             return $http.get(URLs.markHomeT, { params: queryParams });
         }
 
+    }
+    apiService.getAllLoc = function (queryParams) {
+        return $http.get(URLs.getAllLoc, { params: queryParams });
     }
     apiService.isMine = function(queryParams){
         if(mock){

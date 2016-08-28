@@ -1,7 +1,7 @@
 function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeolocation, $q, apiService) {
     $scope.geolocation = {};
     $scope.user = { id: 1, name: "AY", availableResources: 10500 };
-    var apiParams = { userId: $scope.user.id };
+    var apiParams = { userId: $scope.user.id, lat : $scope.geolocation.lat, lng : $scope.geolocation.lng };
     function errorHandler(response) {
         console.error(response);
         alert("Oops, an error occurred.");
@@ -38,7 +38,7 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
     }
 
     function buildArmy(){
-        
+
     }
 
 

@@ -51,7 +51,7 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
     }
 
     function buildArmy(){
-
+        // WikitudeFactory.callARView(ind);
     }
 
 

@@ -33,12 +33,13 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
             })
             .then(function () {
                 // popup with resource info
-                alert("Click to buy");
+                alert("This location costs Rs. 9850 per month. Confirm?");
             }, errorHandler);
     }
 
     function buildArmy(){
         // WikitudeFactory.callARView(ind);
+        alert("Here's where we would bring in the AR experience to show the user some killer creatures!")
     }
 
 

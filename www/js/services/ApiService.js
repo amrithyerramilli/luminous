@@ -1,11 +1,14 @@
 function ApiService($http, $q, $timeout) {
-    var API_URL = "";
+    var API_URL = "http://192.168.0.147:8000/l/";
+    
     var URLs = {
-        markHomeT: API_URL + "/markHomeT"
+        isMine : API_URL + "/isMine",
+        markHomeT: API_URL + "/markHomeT",
+        takeSquare: API_URL + "/takeSquare"
     }
     var mock = true;
-
     var apiService = {};
+
     apiService.markHomeT = function (queryParams) {
         if (mock) {
             var def = $q.defer();

@@ -8,7 +8,8 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
     }
     $scope.$on('$ionicView.enter', onViewEnter);
     $scope.markHomeTerritory = markHomeTerritory;
-    
+    $scope.buildArmy = buildArmy;
+
     function markHomeTerritory() {
         console.log("Marking home territory for current location");
         apiService.markHomeT(apiParams).then(function succ(resp) {
@@ -34,6 +35,10 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
                 // popup with resource info
                 alert("Click to buy");
             }, errorHandler);
+    }
+
+    function buildArmy(){
+        
     }
 
 

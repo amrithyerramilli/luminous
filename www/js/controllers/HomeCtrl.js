@@ -1,26 +1,36 @@
 function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeolocation, $q, apiService) {
     $scope.geolocation = {};
     $scope.user = { id: 1, name: "AY", availableResources: 10500 };
-    $scope.apiParams = { userid: $scope.user.id, lat : $scope.geolocation.lat, lng : $scope.geolocation.lng };
+    $scope.apiParams = { userid: $scope.user.id, lat: $scope.geolocation.lat, lng: $scope.geolocation.lng };
     function errorHandler(response) {
         console.error(response);
         alert("Oops, an error occurred.");
     }
+    $scope.consoleMessages = "";
     $scope.$on('$ionicView.enter', onViewEnter);
+    $scope.$on('$ionicView.loaded', onViewLoaded);
+
     $scope.markHomeTerritory = markHomeTerritory;
     $scope.buildArmy = buildArmy;
+    $scope.alerted = [];
+    $scope.watch = null;
+    $scope.refresh = function () {
+        onViewEnter();
+        onViewLoaded();
+    }
 
-    apiService.getAllLoc($scope.apiParams).then(function(resp) {
-      console.log(1111, resp.data)
-      setTimeout(function() {
-        for (var i = 0; i < resp.data.length; i++ ) {
-          console.log(222, resp.data[i].lat, resp.data[i].lng)
-          var corners = getCorners(resp.data[i].lat, resp.data[i].lng);
-          drawBoundingRect(corners, $scope);
-        }
-
-      }, 5000)
-    })
+    function onViewLoaded(e) {
+        apiService.getAllLoc($scope.apiParams).then(function (resp) {
+            console.log("getAllLoc", resp.data)
+            $timeout(function () {
+                for (var i = 0; i < resp.data.length; i++) {
+                    console.log("getAllLoc loop", resp.data[i].lat, resp.data[i].lng)
+                    var corners = getCorners(resp.data[i].lat, resp.data[i].lng);
+                    drawBoundingRect(corners, $scope);
+                }
+            }, 5000)
+        });
+    }
 
     function markHomeTerritory() {
         console.log("Marking home territory for current location");
@@ -37,9 +47,9 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
 
         }, errorHandler)
             .then(function () {
-                apiService.apis(apiParams).then(function succ(resp) {
+                apiService.apis($scope.apiParams).then(function succ(resp) {
                     if (!resp) {
-                        return apiService.descSquare(apiParams);
+                        return apiService.descSquare($scope.apiParams);
                     }
 
                 }, errorHandler)
@@ -48,33 +58,35 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
                 // popup with resource info
                 alert("This location costs Rs. 9850 per month. Confirm?");
             }, errorHandler);
-            // .then(function () {
-            //     apiService.isMine($scope.apiParams).then(function succ(resp) {
-            //         if (!resp) {
-            //             return apiService.descSquare($scope.apiParams);
-            //         }
+        // .then(function () {
+        //     apiService.isMine($scope.apiParams).then(function succ(resp) {
+        //         if (!resp) {
+        //             return apiService.descSquare($scope.apiParams);
+        //         }
 
-            //     }, errorHandler)
-            // })
-            // .then(function () {
-            //     // popup with resource info
-            //     alert("Click to buy");
-            // }, errorHandler);
+        //     }, errorHandler)
+        // })
+        // .then(function () {
+        //     // popup with resource info
+        //     alert("Click to buy");
+        // }, errorHandler);
     }
 
-    function buildArmy(){
+    function buildArmy() {
         // WikitudeFactory.callARView(ind);
         alert("Here's where we would bring in the AR experience to show the user some killer creatures!")
     }
 
-
-
-
     function onViewEnter(e) {
+        if ($scope.watch) {
+            console.log("clearing watch");
+            // $scope.watch.clearWatch();
+        };
 
         var positionPromise = getCurrentPosition()
             .then(function (geo) {
                 $scope.geolocation = geo;
+                setWatcher();
             })
             .then(function () {
                 $scope.apiParams.lat = $scope.geolocation.latitude
@@ -101,6 +113,7 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
                     }
                 })($scope.map, currentMarker, $scope));
             });
+        setWatcher();
     }
     //  $ionicPlatform.ready(function() {
     //       var posOptions = {timeout: 10000, enableHighAccuracy: true}
@@ -113,42 +126,86 @@ function HomeCtrl($scope, $ionicModal, $timeout, $ionicPlatform, $cordovaGeoloca
     //       // error
     //     });
 
-      var watchOptions = {
-        timeout : 3000,
-        enableHighAccuracy: false // may cause errors if true
-      };
-      $scope.alerted = [];
-      var watch = $cordovaGeolocation.watchPosition(watchOptions);
-      watch.then(
-        null,
-        function(err) {
-          // error
-        },
-        function(position) {
-          var lat = position.coords.latitude
-          var lng = position.coords.longitude
-          $scope.apiParams.lat = lat
-          $scope.apiParams.lng = lng
-          // console.log(lat, long)
-          console.log(111, String(lat)+String(lng))
-          apiService.isMine($scope.apiParams).then(function(resp) {
-            console.log('isMine: ', resp.data)
-            resp = resp.data
-            if (resp.status === 'yours' ) {
-              // do nothing
-            }
-            else if (resp.status === 'occupied' && $scope.alerted.indexOf(String(lat)+String(lng)) === -1) {
-              $scope.alerted.push(String(lat)+String(lng))
-              alert('We\' let you attack later')
-            }
-            else if($scope.alerted.indexOf(String(lat)+String(lng)) === -1) {
-              $scope.alerted.push(String(lat)+String(lng))
-              var alert_resp = alert('Would you like to buy this?')
-            }
-          }, errorHandler)
-          $scope.currentLocation = {latitude : lat, longitude : lng};
-      });
+    function setWatcher() {
+        $ionicPlatform.ready(function () {
 
+            var watchOptions = {
+                timeout: 3000,
+                enableHighAccuracy: true // may cause errors if true
+            };
+            $scope.watch = navigator.geolocation.watchPosition(function succ(position) {
+                var lat = position.coords.latitude
+                var lng = position.coords.longitude
+                $scope.apiParams.lat = lat
+                $scope.apiParams.lng = lng
+                // console.log(lat, long)
+                if ($scope.currentLoc)
+                    $scope.currentLoc.setMap(null);
+                $scope.consoleMessages = "watching. Redrawing marker.";
+                var latLng = new google.maps.LatLng($scope.geolocation.latitude, $scope.geolocation.longitude);
+                $scope.currentloc = new google.maps.Marker({
+                    clickable: false,
+                    icon: new google.maps.MarkerImage('https://maps.gstatic.com/mapfiles/mobile/mobileimgs2.png',
+                        new google.maps.Size(22, 22),
+                        new google.maps.Point(0, 18),
+                        new google.maps.Point(11, 11)),
+                    shadow: null,
+                    zIndex: 999,
+                    map: $scope.map,
+                    position: latLng
+                });
+                console.log(111, String(lat) + String(lng))
+                apiService.isMine($scope.apiParams).then(function (resp) {
+                    console.log('isMine: ', resp.data)
+                    resp = resp.data
+                    if (resp.status === 'yours') {
+                        // do nothing
+                    }
+                    else if (resp.status === 'occupied' && $scope.alerted.indexOf(String(lat) + String(lng)) === -1) {
+                        $scope.alerted.push(String(lat) + String(lng))
+                        alert('We\' let you attack later')
+                    }
+                    else if ($scope.alerted.indexOf(String(lat) + String(lng)) === -1) {
+                        $scope.alerted.push(String(lat) + String(lng))
+                        var alert_resp = alert('Would you like to buy this?')
+                    }
+                }, errorHandler)
+                $scope.currentLocation = { latitude: lat, longitude: lng };
+            }, function err(e) {
+                console.error(e);
+            }, watchOptions);
+            // $scope.watch.then(
+            //     null,
+            //     function (err) {
+            //         // error
+            //         console.error(err);
+            //     },
+            //     function (position) {
+            //         var lat = position.coords.latitude
+            //         var lng = position.coords.longitude
+            //         $scope.apiParams.lat = lat
+            //         $scope.apiParams.lng = lng
+            //         // console.log(lat, long)
+            //         console.log(111, String(lat) + String(lng))
+            //         apiService.isMine($scope.apiParams).then(function (resp) {
+            //             console.log('isMine: ', resp.data)
+            //             resp = resp.data
+            //             if (resp.status === 'yours') {
+            //                 // do nothing
+            //             }
+            //             else if (resp.status === 'occupied' && $scope.alerted.indexOf(String(lat) + String(lng)) === -1) {
+            //                 $scope.alerted.push(String(lat) + String(lng))
+            //                 alert('We\' let you attack later')
+            //             }
+            //             else if ($scope.alerted.indexOf(String(lat) + String(lng)) === -1) {
+            //                 $scope.alerted.push(String(lat) + String(lng))
+            //                 var alert_resp = alert('Would you like to buy this?')
+            //             }
+            //         }, errorHandler)
+            //         $scope.currentLocation = { latitude: lat, longitude: lng };
+            //     });
+        });
+    }
 
     // //   watch.clearWatch();
     //   // OR

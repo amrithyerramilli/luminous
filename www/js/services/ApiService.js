@@ -1,5 +1,5 @@
 function ApiService($http, $q, $timeout) {
-    var API_URL = "http://192.168.0.147:8000/l";
+    var API_URL = "http://192.168.43.228:8000/l";
     
     var URLs = {
         isMine : API_URL + "/isMine",
@@ -29,7 +29,7 @@ function ApiService($http, $q, $timeout) {
         return $http.get(URLs.getAllLoc, { params: queryParams });
     }
     apiService.isMine = function(queryParams){
-        if(true){
+        if(mock){
             var def = $q.defer();
             $timeout(function () {
                 def.resolve(true);
